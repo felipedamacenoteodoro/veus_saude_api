@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\ProdutoRequest;
 use App\Produto;
-use App\Repository\ProdutoRepository;
+use App\Repositories\ProdutoRepository;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -26,22 +27,22 @@ class ProdutoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, ProdutoRepository $produtos)
     {
 
-//        $produtos = $this->produto;
-//        if($request->has('conditions')){
-//            $separa_condicoes = explode(';',$request->get('conditions'));
-//
-//            foreach ($separa_condicoes as $separa_cond){
-//                $separa_key_valor = explode(':', $separa_cond);
-//                $produtos = $produtos->where($separa_key_valor[0], 'like','%'.$separa_key_valor[1].'%');
-//            }
-//
-//        }
+        // Caso tenha filtros para busca
+        if($request->has('filter')){
+            $produtos::condicoesDeBusca($request);
+        }
 
+        // Caso ordenacao
+        if($request->has('order')){
+            $produtos::ordenacao($request);
+        }
+
+        // Caso queira selecionar determinados campos
         if($request->has('fields')) {
-            $produtos = (new ProdutoRepository($this->produto, $request))->selectFilter();
+            $produtos::selecionarCampos($request);
         }
         return response()->json($produtos->paginate(10));
     }
@@ -52,7 +53,7 @@ class ProdutoController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ProdutoRequest $request)
     {
         $dados = $request->all();
         $produto = $this->produto->create($dados);
@@ -78,7 +79,7 @@ class ProdutoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(ProdutoRequest $request, $id)
     {
         $dados = $request->all();
         $produto = $this->produto->findOrFail($dados['id']);
